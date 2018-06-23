@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["coderconvoy <thebeaky@psmail.net>"]
 description = "A Crate for writing svgs and laying out printable cards"
 license = "mit"
-repository "https://github.com/storyfeet/mksvg_rs"
+repository = "https://github.com/storyfeet/mksvg_rs"
 
 [dependencies]
 
