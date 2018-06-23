@@ -1,3 +1,21 @@
+//! The aim of the args method is to make a list of svg arguments
+//! easy to compose
+//!
+//! They also remove the complication of separating styles, 
+//! transforms, and standard xml arguments
+//!
+//! each args function consumes, modifies and returns it's input
+//! so that they can be chained.
+//! 
+//! ```
+//! use mksvg::args::{Args,SvgArg};
+//! let a = Args::new().x(4).text_anchor("middle").translate(4,5);
+//! assert_eq!(r#"x="4" style="text-anchor:middle;" transform="translate(4,5) " "#,
+//! &format!("{}",a));
+//! ```
+//!
+//! the SvgWrite methods (from mod write) accept an Args object.
+
 
 use std::marker::Sized;
 use std::fmt::{Display,Formatter};
@@ -118,7 +136,13 @@ pub trait SvgArg where Self:Sized {
     fn fill<T:Display>(self,n:T)->Self{
         self.style("fill",n)
     }
+    fn font_weight<T:Display>(self,n:T)->Self{
+        self.style("font-weight",n)
+    }
     
+    fn text_anchor<T:Display>(self,n:T)->Self{
+        self.style("text-anchor",n)
+    }
 
     //args
 
@@ -131,7 +155,6 @@ pub trait SvgArg where Self:Sized {
     fn ry<T:Display>(self,n:T)->Self{ self.arg("ry",n) }
     fn width<T:Display>(self,n:T)->Self{ self.arg("width",n) }
     fn height<T:Display>(self,n:T)->Self{ self.arg("height",n) }
-    fn text_anchor<T:Display>(self,n:T)->Self{self.arg("text-anchor",n)}
     fn href<T:Display>(self,n:T)->Self{self.arg("xlink:href",n)}
 
     //transforms

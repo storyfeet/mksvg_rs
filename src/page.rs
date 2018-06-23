@@ -144,7 +144,7 @@ pub fn unite_as_pdf<P:AsRef<Path>,Q:AsRef<Path>>(v:Vec<P>,fpath:Q)->bool{
         pp.set_extension("pdf"); 
 
         let pps = pp.to_str().unwrap_or("cc.pdf");
-        print!("Creating : {}",pps);
+        print!("Creating : {}\n",pps);
 
 
         let _output = Command::new("inkscape")
@@ -155,7 +155,7 @@ pub fn unite_as_pdf<P:AsRef<Path>,Q:AsRef<Path>>(v:Vec<P>,fpath:Q)->bool{
     }
 
     pdv.push(fpath.as_ref().to_str().unwrap_or("pooyt4.pdf").to_string());
-    print!("Combining");
+    print!("Combining\n");
     Command::new("pdfunite").args(pdv).output().expect("could not unite the pdfs");
 
     true
