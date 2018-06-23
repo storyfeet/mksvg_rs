@@ -3,7 +3,7 @@ name = "mksvg"
 version = "0.1.0"
 authors = ["coderconvoy <thebeaky@psmail.net>"]
 description = "A Crate for writing svgs and laying out printable cards"
-license = "mit"
+license = "MIT"
 repository = "https://github.com/storyfeet/mksvg_rs"
 
 [dependencies]
