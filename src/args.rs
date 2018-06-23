@@ -32,7 +32,7 @@ pub struct Args{
 /// # example 
 ///
 /// ```
-/// use svg2::args::{Args,SvgArg};
+/// use mksvg::args::{Args,SvgArg};
 /// let a = Args::new().arg("f",7).style("p","rt");
 /// assert_eq!(r#"f="7" style="p:rt;" "#,&format!("{}",a));
 /// ```
@@ -94,7 +94,7 @@ impl SvgArg for Args{
 
 ///
 ///```
-///use svg2::args::{Args,SvgArg};
+///use mksvg::args::{Args,SvgArg};
 ///let a = Args::new().stroke_width(2);
 ///assert_eq!(r#"style="stroke-width:2;" "#,&format!("{}",a));
 ///```

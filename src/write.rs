@@ -9,6 +9,11 @@ pub trait CDNum:num::Num+num::NumCast+ Copy + Display{}
 impl<T:num::Num+num::NumCast+Copy+Display> CDNum for T {
 }
 
+pub fn qcast<A:CDNum,B:CDNum>(a:A)->B{
+    num::NumCast::from(a).unwrap()
+}
+
+
 pub struct SvgW<W:Write> {
     w:W,
     d:i8,

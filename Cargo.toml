@@ -1,5 +1,5 @@
 [package]
-name = "svg2"
+name = "mksvg"
 version = "0.1.0"
 authors = ["coderconvoy <thebeaky@psmail.net>"]
 
