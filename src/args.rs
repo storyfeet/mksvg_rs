@@ -9,8 +9,8 @@
 //! 
 //! ```
 //! use mksvg::args::{Args,SvgArg};
-//! let a = Args::new().x(4).text_anchor("middle").translate(4,5);
-//! assert_eq!(r#"x="4" style="text-anchor:middle;" transform="translate(4,5) " "#,
+//! let a = Args::new().x(4).stroke("black").translate(4,5);
+//! assert_eq!(r#"x="4" style="stroke:black;" transform="translate(4,5) " "#,
 //! &format!("{}",a));
 //! ```
 //!
@@ -140,9 +140,6 @@ pub trait SvgArg where Self:Sized {
         self.style("font-weight",n)
     }
     
-    fn text_anchor<T:Display>(self,n:T)->Self{
-        self.style("text-anchor",n)
-    }
 
     //args
 
@@ -156,6 +153,7 @@ pub trait SvgArg where Self:Sized {
     fn width<T:Display>(self,n:T)->Self{ self.arg("width",n) }
     fn height<T:Display>(self,n:T)->Self{ self.arg("height",n) }
     fn href<T:Display>(self,n:T)->Self{self.arg("xlink:href",n)}
+    fn text_anchor<T:Display>(self,n:T)->Self{ self.arg("text-anchor",n) }
 
     //transforms
     
