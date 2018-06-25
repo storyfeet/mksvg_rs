@@ -23,6 +23,7 @@ use std::fmt;
 
 
 
+
 #[derive(Copy,Clone)]
 enum AType {
     ARG,
@@ -116,7 +117,7 @@ impl SvgArg for Args{
 ///let a = Args::new().stroke_width(2);
 ///assert_eq!(r#"style="stroke-width:2;" "#,&format!("{}",a));
 ///```
-pub trait SvgArg where Self:Sized {
+pub trait SvgArg where Self:Sized+Display {
         
     fn arg<T:Display>(self,k:&str,v:T)->Self;
     fn style<T:Display>(self, k:&str,v:T)->Self;
@@ -143,6 +144,7 @@ pub trait SvgArg where Self:Sized {
 
     //args
 
+    fn d<T:Display>(self,n:T)->Self{self.arg("d",n)}
     fn id<T:Display>(self,n:T)->Self{self.arg("id",n)}
     fn x<T:Display>(self,n:T)->Self{ self.arg("x",n) }
     fn y<T:Display>(self,n:T)->Self{ self.arg("y",n) }

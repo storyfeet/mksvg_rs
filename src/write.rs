@@ -1,8 +1,13 @@
 use args::{Args,SvgArg};
-use std::io::Write;
+
 
 use std::fmt::Display;
 use num;
+
+use std::io::Write as IOWrite;
+use std::fmt::Write as FmtWrite;
+
+
 
 pub trait CDNum:num::Num+num::NumCast+ Copy + Display{}
 
@@ -24,17 +29,16 @@ pub fn qcast<A:CDNum,B:CDNum>(a:A)->B{
 }
 
 
-/// SvgW is a very simple writer, that keeps a tab depth.
-/// it implements SvgWrite, and prints the lines given at a the current depth 
-pub struct SvgW<W:Write> {
+/// SvgIO is a very simple writer, that takes an std::io::Write keeps a tab depth.
+/// it implements SvgWrite,  and prints the lines given at a the current depth 
+pub struct SvgIO<W:IOWrite> {
     w:W,
     d:i8,
 }
 
-
-impl<W:Write> SvgW<W> {
-    pub fn new(w:W)->SvgW<W>{
-        SvgW{
+impl<W:IOWrite> SvgIO<W> {
+    pub fn new(w:W)->SvgIO<W>{
+        SvgIO{
             w:w,
             d:0,
         }
@@ -48,7 +52,7 @@ impl<W:Write> SvgW<W> {
     }
 }
 
-impl<W:Write> SvgWrite for SvgW<W> {
+impl<W:IOWrite> SvgWrite for SvgIO<W> {
     fn write(&mut self, s:&str){
         let ps = self.pad();
         write!(self.w,"{}{}\n",ps,s).unwrap();
@@ -58,6 +62,38 @@ impl<W:Write> SvgWrite for SvgW<W> {
     }
 }
 
+/// SvgFmt is a very simple writer, that takes an std::fmt::Write aand keeps a tab depth.
+/// it implements SvgWrite, and prints the lines given at a the current depth 
+pub struct SvgFmt<W:FmtWrite> {
+    w:W,
+    d:i8,
+}
+
+impl<W:FmtWrite> SvgFmt<W> {
+    pub fn new(w:W)->SvgFmt<W>{
+        SvgFmt{
+            w:w,
+            d:0,
+        }
+    }
+    fn pad(&self)->String{
+        let mut res = "".to_string();
+        for _i in 0..self.d {
+            res.push_str("  ");
+        }
+        res
+    }
+}
+
+impl<W:FmtWrite> SvgWrite for SvgFmt<W> {
+    fn write(&mut self, s:&str){
+        let ps = self.pad();
+        write!(self.w,"{}{}\n",ps,s).unwrap();
+    }
+    fn inc_depth(&mut self,n:i8){
+        self.d += n;
+    }
+}
 /// the methods on SvgWrite, do not build anything.
 /// they simply write the output, so if you open something (g or svg) don't forget to close it.
 pub trait SvgWrite{
@@ -96,7 +132,7 @@ pub trait SvgWrite{
     }
 
     fn any(&mut self,name:&str,args:&Args){
-        self.write(&format!("<{} {} />",name,args));
+        self.write(&format!("<{} {}/>",name,args));
     }
 
     fn any_o(&mut self,name:&str,args:&Args){
@@ -149,6 +185,10 @@ pub trait SvgWrite{
 
     fn img<T:Display>(&mut self,loc:&str,x:T,y:T,w:T,h:T){
         self.any("image",&Args::new().x(x).y(y).w(w).h(h).href(loc));
+    }
+
+    fn path<T:Display>(&mut self,pathd:T,args:Args){
+        self.any("path",&args.d(pathd));
     }
 }
 

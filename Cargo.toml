@@ -8,4 +8,4 @@ repository = "https://github.com/storyfeet/mksvg_rs"
 
 [dependencies]
 
-num = "0.1"
+num = "0.1.1"

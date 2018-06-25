@@ -16,8 +16,10 @@ pub mod args;
 pub mod write;
 pub mod page;
 pub mod text;
+pub mod path;
 
-pub use write::{SvgW,SvgWrite};
+pub use write::{SvgIO,SvgFmt,SvgWrite};
 pub use args::{Args,SvgArg};
 pub use page::Card;
+pub use path::PathD;
 

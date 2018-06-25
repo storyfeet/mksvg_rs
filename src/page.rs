@@ -2,7 +2,7 @@ use std::io::Write;
 use std::ffi::{OsStr,OsString};
 use std::fs::File;
 use std::path::{Path,PathBuf};
-use write::{SvgW,SvgWrite,CDNum,qcast};
+use write::{SvgIO,SvgWrite,CDNum,qcast};
 use std::process::Command;
 
 
@@ -12,7 +12,7 @@ pub trait Card<NT:CDNum> :Clone{
 
 
 pub fn page<W:Write,NT:CDNum,C:Card<NT>>(w:W,pw:NT,ph:NT,nw:usize,nh:usize,cards:&[C]){
-    let mut svg = SvgW::new(w);
+    let mut svg = SvgIO::new(w);
     svg.start(pw,ph);
 
     let mw:NT = pw/qcast(20);
