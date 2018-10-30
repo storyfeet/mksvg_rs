@@ -5,6 +5,10 @@ use std::path::{Path,PathBuf};
 use write::{SvgIO,SvgWrite,CDNum,qcast};
 use std::process::Command;
 
+pub fn a4_width<T:CDNum>()->T{qcast(2480)}
+pub fn a4_height<T:CDNum>()->T{qcast(3508)}
+
+
 
 pub trait Card<NT:CDNum> :Clone{
     fn front<S:SvgWrite>(&self,svg:&mut S,w:NT,h:NT);
@@ -38,7 +42,7 @@ pub fn page<W:Write,NT:CDNum,C:Card<NT>>(w:W,pw:NT,ph:NT,nw:usize,nh:usize,cards
 
 
 pub fn page_a4<W:Write,NT:CDNum,C:Card<NT>>(w:W,nw:usize,nh:usize,cards:&[C]){
-    page(w,qcast::<i32,NT>(2480),qcast::<i32,NT>(3508),nw,nh,cards);
+    page(w,a4_width(),a4_height(),nw,nh,cards);
 }
 
 pub fn pages<NT:CDNum,C:Card<NT>,P:AsRef<Path>>(basepath:P,pw:NT,ph:NT,nw:usize,nh:usize,cards:&[C])->Vec<PathBuf>{
@@ -72,7 +76,7 @@ pub fn pages<NT:CDNum,C:Card<NT>,P:AsRef<Path>>(basepath:P,pw:NT,ph:NT,nw:usize,
 
 
 pub fn pages_a4<NT:CDNum,C:Card<NT>,P:AsRef<Path>>(basepath:P,nw:usize,nh:usize,cards:&[C])->Vec<PathBuf>{
-    pages(basepath,qcast::<i32,NT>(2480),qcast::<i32,NT>(3508),nw,nh,cards)
+    pages(basepath,a4_width(),a4_height(),nw,nh,cards)
 }
 
 /// flip the items in groups 'w' big/wide
