@@ -18,7 +18,6 @@
 //! ```
 
 
-use std::ascii::AsciiExt;
 use std::fmt;
 use std::fmt::{Display,Formatter};
 
@@ -67,8 +66,8 @@ impl PathD {
     ///add will make sure the option is case matched to the current relative/absolute state
     pub fn add(mut self,tp:char,vals:&str)->Self{
         match self.rel {
-            true=>self.items.push(PNode{tp:AsciiExt::to_ascii_lowercase(&tp),vals:vals.to_string()}),
-            false=>self.items.push(PNode{tp:AsciiExt::to_ascii_uppercase(&tp),vals:vals.to_string()}),
+            true=>self.items.push(PNode{tp:tp.to_ascii_lowercase(),vals:vals.to_string()}),
+            false=>self.items.push(PNode{tp:tp.to_ascii_uppercase(),vals:vals.to_string()}),
         }
         self
     }

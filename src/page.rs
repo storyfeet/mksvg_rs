@@ -2,8 +2,9 @@ use std::io::Write;
 use std::ffi::{OsStr,OsString};
 use std::fs::File;
 use std::path::{Path,PathBuf};
-use write::{SvgIO,SvgWrite,CDNum,qcast};
 use std::process::Command;
+
+use crate::write::{SvgIO,SvgWrite,CDNum,qcast};
 
 pub fn a4_width<T:CDNum>()->T{qcast(2480)}
 pub fn a4_height<T:CDNum>()->T{qcast(3508)}
