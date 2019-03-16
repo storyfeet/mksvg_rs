@@ -84,13 +84,12 @@ impl<W: FmtWrite> SvgWrite for SvgFmt<W> {
 }
 /// the methods on SvgWrite, do not build any structure
 /// they simply write the output, so if you open something (g or svg) don't forget to close it.
-pub trait SvgWrite {
+pub trait SvgWrite: Sized {
     fn write(&mut self, s: &str);
     fn inc_depth(&mut self, n: i8);
 
     ///writes a simple prelude for an svg file
-    ///don't forget to call end.
-    fn start<T: CDNum>(&mut self, w: T, h: T) {
+    fn start<T: CDNum>(&mut self, w: T, h: T) -> TransWrap<Self> {
         self.write("<?xml version=\"1.0\" ?>");
         self.any_o(
             "svg",
@@ -99,39 +98,28 @@ pub trait SvgWrite {
                 .h(h)
                 .arg("xmlns", "http://www.w3.org/2000/svg")
                 .arg("xmlns:xlink", "http://www.w3.org/1999/xlink"),
-        );
+            "</svg>",
+        )
     }
 
-    ///ends the svg file
-    fn end(&mut self) {
-        self.inc_depth(-1);
-        self.write("</svg>");
+    fn g(&mut self, args: Args) -> TransWrap<Self> {
+        self.any_o("g", &args, "</g>")
     }
 
-    fn g(&mut self, args: Args) {
-        self.any_o("g", &args);
+    fn g_translate<T: CDNum>(&mut self, x: T, y: T) -> TransWrap<Self> {
+        self.g(Args::new().translate(x, y))
     }
 
-    fn g_translate<T: CDNum>(&mut self, x: T, y: T) {
-        self.g(Args::new().translate(x, y));
-    }
-
-    fn g_rotate<T: CDNum>(&mut self, ang: T, x: T, y: T) {
-        self.g(Args::new().rotate(ang, x, y));
-    }
-
-    fn g_end(&mut self) {
-        self.inc_depth(-1);
-        self.write("</g>");
+    fn g_rotate<T: CDNum>(&mut self, ang: T, x: T, y: T) -> TransWrap<Self> {
+        self.g(Args::new().rotate(ang, x, y))
     }
 
     fn any(&mut self, name: &str, args: &Args) {
         self.write(&format!("<{} {}/>", name, args));
     }
 
-    fn any_o(&mut self, name: &str, args: &Args) {
-        self.write(&format!("<{} {}>", name, args));
-        self.inc_depth(1);
+    fn any_o(&mut self, name: &str, args: &Args, close: &'static str) -> TransWrap<Self> {
+        TransWrap::new(self, &format!("<{} {}>", name, args), close)
     }
 
     fn rect<T: CDNum>(&mut self, x: T, y: T, w: T, h: T, args: Args) {
