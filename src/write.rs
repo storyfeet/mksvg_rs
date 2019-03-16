@@ -53,7 +53,6 @@ impl<W: IOWrite> SvgWrite for SvgIO<W> {
     }
 }
 
-
 /// SvgFmt is a very simple writer, that takes an std::fmt::Write aand keeps a tab depth.
 /// it implements SvgWrite, and prints the lines given at a the current depth
 pub struct SvgFmt<W: FmtWrite> {
@@ -196,57 +195,83 @@ pub trait SvgWrite {
     }
 }
 
-
-pub struct TransWrap<'a,W:'a +SvgWrite>{
-    td_inc:i8,
-    end:&'static str,
-    w:&'a mut W,
+pub struct TransWrap<'a, W: 'a + SvgWrite> {
+    start: Option<String>,
+    td_inc: i8,
+    end: &'static str,
+    w: &'a mut W,
 }
 
-impl<'a,W:SvgWrite> TransWrap<'a,W>{
-    pub fn new(w:&'a mut W,begin:&str,end:&'static str)->Self{
-        w.write(begin);
-        w.inc_depth(1);
-
-        TransWrap{
-            td_inc:1,
+impl<'a, W: SvgWrite> TransWrap<'a, W> {
+    pub fn new(w: &'a mut W, begin: &str, end: &'static str) -> Self {
+        TransWrap {
+            start: Some(begin.to_string()),
+            td_inc: 1,
             end,
             w,
         }
     }
+
+    pub fn force(&mut self) {
+        if let Some(ref st) = self.start {
+            self.w.write(&st);
+            self.w.inc_depth(1);
+            self.start = None;
+        }
+    }
 }
 
-impl<'a,W:SvgWrite> SvgWrite for TransWrap<'a,W>{
-    fn write(&mut self, s: &str){
+impl<'a, W: SvgWrite> SvgWrite for TransWrap<'a, W> {
+    fn write(&mut self, s: &str) {
+        self.force();
         self.w.write(s);
     }
-    fn inc_depth(&mut self, n: i8){
+    fn inc_depth(&mut self, n: i8) {
         self.td_inc += n;
         self.w.inc_depth(n);
     }
 }
 
-impl<'a,W:SvgWrite> Drop for TransWrap<'a,W>{
-    fn drop(&mut self){
-        self.w.inc_depth(-self.td_inc);
-        self.w.write(self.end);
+impl<'a, W: SvgWrite> Drop for TransWrap<'a, W> {
+    fn drop(&mut self) {
+        if self.start == None {
+            self.w.inc_depth(-self.td_inc);
+            self.w.write(self.end);
+        }
     }
 }
 
-
-
 #[cfg(test)]
-mod test{
+mod test {
     use super::*;
     #[test]
-    pub fn test_wrapper(){
+    pub fn test_wrapper() {
         let mut buf = String::new();
         let mut g = SvgFmt::new(&mut buf);
-        let mut p = TransWrap::new(&mut g,"<hello>","<goodbye>");
+        let mut p = TransWrap::new(&mut g, "<hello>", "<goodbye>");
         p.write("<item>");
-        
+
         drop(p);
-        assert_eq!(&buf,"<hello>\n  <item>\n<goodbye>\n");
-        
+        assert_eq!(&buf, "<hello>\n  <item>\n<goodbye>\n");
+    }
+
+    #[test]
+    pub fn test_no_write() {
+        let mut buf = String::new();
+        let mut g = SvgFmt::new(&mut buf);
+        let mut p = TransWrap::new(&mut g, "<hello>", "<goodbye>");
+
+        drop(p);
+        assert_eq!(&buf, "");
+    }
+
+    #[test]
+    pub fn test_force() {
+        let mut buf = String::new();
+        let mut g = SvgFmt::new(&mut buf);
+        let mut p = TransWrap::new(&mut g, "<hello>", "<goodbye>");
+        p.force();
+        drop(p);
+        assert_eq!(&buf, "<hello>\n<goodbye>\n");
     }
 }
