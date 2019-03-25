@@ -20,7 +20,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::marker::Sized;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 enum AType {
     ARG,
     STYLE,
@@ -29,14 +29,14 @@ enum AType {
 
 use self::AType::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 struct Arg {
     k: String,
     v: String,
     tp: AType,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Args {
     items: Vec<Arg>,
 }
@@ -80,7 +80,7 @@ impl SvgArg for Args {
     fn arg<T: Display>(mut self, k: &str, v: T) -> Self {
         self.items.push(Arg {
             k: k.to_string(),
-            v: format!("{}", v),
+            v: v.to_string(),
             tp: ARG,
         });
         self
@@ -159,6 +159,9 @@ pub trait SvgArg: Sized + Display {
     fn y<T: Display>(self, n: T) -> Self {
         self.arg("y", n)
     }
+    fn xy<T:Display>(self,x:T,y:T)->Self{
+        self.x(x).y(y)
+    }
     fn cy<T: Display>(self, n: T) -> Self {
         self.arg("cy", n)
     }
@@ -176,6 +179,9 @@ pub trait SvgArg: Sized + Display {
     }
     fn height<T: Display>(self, n: T) -> Self {
         self.arg("height", n)
+    }
+    fn wh<T:Display>(self,w:T,h:T) ->Self{
+        self.w(w).h(h)
     }
     fn href<T: Display>(self, n: T) -> Self {
         self.arg("xlink:href", n)

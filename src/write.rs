@@ -144,7 +144,7 @@ pub trait SvgWrite: Sized {
         let lns = tx.split("\n");
         let mut ln_y: T = y;
         for ln in lns {
-            self.text(&ln, x, ln_y, fs, args.clone().y(ln_y));
+            self.text(&ln, x, ln_y, fs, args.clone());
             ln_y = ln_y + dy;
         }
     }
@@ -247,7 +247,7 @@ mod test {
     pub fn test_no_write() {
         let mut buf = String::new();
         let mut g = SvgFmt::new(&mut buf);
-        let mut p = TransWrap::new(&mut g, "<hello>", "<goodbye>");
+        let p = TransWrap::new(&mut g, "<hello>", "<goodbye>");
 
         drop(p);
         assert_eq!(&buf, "");
