@@ -20,5 +20,6 @@ pub mod write;
 pub use crate::args::{Args, SvgArg};
 pub use crate::page::Card;
 pub use crate::path::PathD;
-pub use crate::write::{SvgFmt, SvgIO, SvgWrite};
 pub use crate::tag::Tag;
+pub use crate::text::{wrap, Text};
+pub use crate::write::{SvgFmt, SvgIO, SvgWrite};

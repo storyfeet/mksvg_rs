@@ -1,6 +1,6 @@
 [package]
 name = "mksvg"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["coderconvoy <thebeaky@psmail.net>"]
 description = "A Crate for writing svgs and laying out printable cards"
 license = "MIT"
