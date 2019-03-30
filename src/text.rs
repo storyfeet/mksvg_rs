@@ -1,5 +1,86 @@
 //! A utility for wrapping text, and allowing users to insert new lines fromconfig files etc.
 //! This primarily exists to enable the text_lines method in "write.rs" to print as desired.
+//!
+
+
+
+use crate::args::{Args, SvgArg};
+use crate::write::{SvgWrite,CDNum,qcast};
+use std::fmt;
+use std::fmt::{Display,Debug};
+
+
+#[derive(Clone,Debug,PartialEq)]
+pub struct Text<C:CDNum>{
+    ss: Vec<String>,
+    args:Args,
+    back: Option<(C,String)>,
+    x:C,
+    y:C,
+    line_height:C
+}
+
+impl<C:CDNum> Text<C>{
+    pub fn new<S:AsRef<String>>(s:String,x:C,y:C,lh:C)->Self{
+        let s:&str = s.as_ref();
+        Self::lines(s.split("\n"),x,y,lh)
+    }
+    pub fn lines<I,S>(it:I,x:C,y:C,lh:C)->Self
+        where I:IntoIterator<Item=S>,
+              S:AsRef<str>,
+    {
+        Text{
+            ss:it.into_iter().map(|v|v.as_ref().to_string()).collect(),
+            args:Args::new(),
+            back:None,
+            x,y,
+            line_height:lh,
+        }
+    }
+    pub fn v_center(mut self)->Self{
+        self.y = self.y - self.line_height * qcast(self.ss.len()/2);
+        self
+    }
+    pub fn bg<S:AsRef<str>>(mut self,sw:C,col:S)->Self{
+        self.back = Some((sw,col.as_ref().to_string()));
+        self
+    }
+
+    pub fn write<S:SvgWrite>(&self,s:&mut S){
+        for (n,l) in self.ss.iter().enumerate(){
+            let a = self.args.clone().xy(self.x,self.y+ self.line_height * qcast(n));
+            if let Some((w,ref col)) = self.back {
+                let a2 = a.clone().stroke_width(w).stroke(col);
+                s.write(&format!("<text {}>{}</text>",l,a2));
+            }
+            s.write(&format!("<text {}>{}</text>",l,a));
+        }
+    }
+
+}
+
+
+impl<C:CDNum> Display for Text<C>{ 
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,"{:?}",self)
+    }
+}
+
+impl<C:CDNum+Debug> SvgArg for Text<C>{ 
+    fn arg<T: Display>(mut self, k: &str, v: T) -> Self{
+        self.args = self.args.arg(k,v);
+        self
+
+    }
+    fn style<T: Display>(mut self, k: &str, v: T) -> Self {
+        self.args = self.args.style(k, v);
+        self
+    }
+    fn transform<T: Display>(mut self, k: &str, args: &[T]) -> Self {
+        self.args = self.args.transform(k, args);
+        self
+    }
+}
 
 /// convert escaped characters to their standard response.
 ///

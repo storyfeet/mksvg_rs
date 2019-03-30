@@ -1,14 +1,14 @@
 use crate::args::{Args, SvgArg};
 
 use num;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use std::fmt::Write as FmtWrite;
 use std::io::Write as IOWrite;
 
-pub trait CDNum: num::Num + num::NumCast + Copy + Display {}
+pub trait CDNum: num::Num + num::NumCast + Copy + Display + Debug {}
 
-impl<T: num::Num + num::NumCast + Copy + Display> CDNum for T {}
+impl<T: num::Num + num::NumCast + Copy + Display + Debug> CDNum for T {}
 
 ///qcast (quick cast) is makes it simple to use primitives with an unknown CDNum type
 ///
