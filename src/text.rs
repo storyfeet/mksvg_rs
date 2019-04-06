@@ -37,7 +37,12 @@ impl<C: CDNum> Text<C> {
         }
     }
     pub fn v_center(mut self) -> Self {
-        self.y = self.y - self.line_height * qcast(self.ss.len() / 2);
+        self.y = self.y - self.line_height * qcast(self.ss.len() as f64 / 2.);
+        self
+    }
+
+    pub fn v_base(mut self) -> Self {
+        self.y = self.y - self.line_height * qcast(self.ss.len());
         self
     }
     pub fn bg<S: AsRef<str>>(mut self, sw: C, col: S) -> Self {
