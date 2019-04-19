@@ -10,3 +10,4 @@ edition = "2018"
 [dependencies]
 
 num = "0.1"
+failure = "0.1.5"

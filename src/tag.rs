@@ -20,7 +20,7 @@ impl Tag {
         Tag::new("rect").xy(x, y).wh(w, h)
     }
     pub fn img<P: Display, S: Display>(loc: &str, x: P, y: P, w: S, h: S) -> Self {
-        Tag::new("img").xy(x, y).wh(w, h).href(loc)
+        Tag::new("image").xy(x, y).wh(w, h).href(loc)
     }
     pub fn ellipse<P: Display, S: Display>(cx: P, cy: P, rx: S, ry: S) -> Self {
         Tag::new("ellipse").cx(cx).cy(cy).rx(rx).ry(ry)

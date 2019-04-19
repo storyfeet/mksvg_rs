@@ -1,3 +1,4 @@
+use failure::Error;
 use std::ffi::{OsStr, OsString};
 use std::fs::File;
 use std::io::Write;
@@ -58,7 +59,7 @@ pub fn pages<NT: CDNum, C: Card<NT>, P: AsRef<Path>>(
     nw: usize,
     nh: usize,
     cards: &[C],
-) -> Vec<PathBuf> {
+) -> Result<Vec<PathBuf>, Error> {
     let mut res = Vec::new();
     let total = nw * nh;
 
@@ -66,7 +67,7 @@ pub fn pages<NT: CDNum, C: Card<NT>, P: AsRef<Path>>(
     let cname = OsString::from(cpath.file_name().unwrap_or(&OsStr::new("")));
 
     if cards.len() == 0 {
-        return res;
+        return Ok(res);
     }
 
     for i in 0..((cards.len() - 1) / total) + 1 {
@@ -74,14 +75,11 @@ pub fn pages<NT: CDNum, C: Card<NT>, P: AsRef<Path>>(
         let mut fname = cname.clone();
         fname.push(&format!("{}.svg", i));
         path.push(fname);
-        let w = match File::create(&path) {
-            Ok(f) => f,
-            _ => return res,
-        };
+        let w = File::create(&path)?;
         page(w, pw, ph, nw, nh, &cards[i * total..]);
         res.push(path);
     }
-    res
+    Ok(res)
 }
 
 pub fn pages_a4<NT: CDNum, C: Card<NT>, P: AsRef<Path>>(
@@ -89,7 +87,7 @@ pub fn pages_a4<NT: CDNum, C: Card<NT>, P: AsRef<Path>>(
     nw: usize,
     nh: usize,
     cards: &[C],
-) -> Vec<PathBuf> {
+) -> Result<Vec<PathBuf>, Error> {
     pages(basepath, a4_width(), a4_height(), nw, nh, cards)
 }
 
