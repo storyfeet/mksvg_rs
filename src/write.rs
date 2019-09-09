@@ -80,6 +80,16 @@ impl<W: FmtWrite> SvgWrite for SvgFmt<W> {
         self.d += n;
     }
 }
+
+impl SvgWrite for &mut dyn SvgWrite {
+    fn write(&mut self, s: &str) {
+        (*self).write(s)
+    }
+    fn inc_depth(&mut self, n: i8) {
+        (*self).inc_depth(n);
+    }
+}
+
 /// the methods on SvgWrite, do not build any structure
 /// they simply write the output, so if you open something (g or svg) don't forget to close it.
 pub trait SvgWrite {

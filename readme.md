@@ -22,6 +22,15 @@ Tag::rect(5,6,100,100).write(&mut inner_writer);
 when ```inner_writer``` is dropped, ```outer_writer``` will be writable again, ensuring the structure of the Svg is correct
 
 
+The Page drawing library has now also changed to use a Builder Pattern.
+
+eg
+```rust
+
+let files = page::Pages::build(cards).page_size(400,500).grid_size(4,4).write_pages("base/path_");
+```
+
+
 ### 0.1.3
 
 * Added Two new major types.  The Tag, and Text, these can now be build and finished with a write on an SvgWrite   eg: ```Tag::rect(x,y,w,h).fill("red").write<S:SvgWrite>(s:S);```

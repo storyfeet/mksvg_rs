@@ -1,7 +1,4 @@
-use failure::Error;
-use std::ffi::{OsStr, OsString};
 use std::fs::File;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -11,26 +8,52 @@ use crate::write::{qcast, CDNum, SvgIO, SvgWrite};
 
 pub struct Pages<'a, NT: CDNum, C> {
     cards: &'a [C],
+    flip: bool,
     page_dims: Option<(NT, NT)>,
     grid_shape: Option<(usize, usize)>,
     card_size: Option<(NT, NT)>,
-    init_defs: Box<Fn(&mut SvgWrite)>,
+    init_defs: Option<&'a for<'r> Fn(&'r mut (dyn SvgWrite + 'r))>,
+    //init_defs: Option<Box<Fn(&mut SvgWrite)>>,
 }
-
-fn svg_no_init(_: &mut SvgWrite) {}
 
 impl<'a, NT: CDNum, C: Card<NT>> Pages<'a, NT, C> {
     pub fn build(c: &'a [C]) -> Pages<'a, NT, C> {
         Pages {
             cards: c,
+            flip: false,
             page_dims: None,
             grid_shape: None,
             card_size: None,
-            init_defs: Box::new(svg_no_init),
+            init_defs: None,
         }
     }
 
-    pub fn write_page<W: SvgWrite>(&self, svg: &mut W, offset: usize) {
+    pub fn flip(&mut self) -> &mut Self {
+        self.flip = true;
+        self
+    }
+
+    pub fn page_size(&mut self, w: NT, h: NT) -> &mut Self {
+        self.page_dims = Some((w, h));
+        self
+    }
+
+    pub fn grid_size(&mut self, nw: usize, nh: usize) -> &mut Self {
+        self.grid_shape = Some((nw, nh));
+        self
+    }
+
+    pub fn card_size(&mut self, cw: NT, ch: NT) -> &mut Self {
+        self.card_size = Some((cw, ch));
+        self
+    }
+
+    pub fn init_page(&'a mut self, f: &'a for<'r> Fn(&'r mut (dyn SvgWrite + 'r))) -> &'a mut Self {
+        self.init_defs = Some(f);
+        self
+    }
+
+    pub fn write_page<W: SvgWrite>(&self, svg: &'a mut W, offset: usize) {
         let (pw, ph) = self.page_dims.unwrap_or((a4_width(), a4_height()));
         let (gw, gh) = self.grid_shape.unwrap_or((4, 4));
         let (cw, ch) = self.card_size.unwrap_or({
@@ -44,7 +67,9 @@ impl<'a, NT: CDNum, C: Card<NT>> Pages<'a, NT, C> {
 
         let mut svg = Tag::start(svg, pw, ph);
 
-        (self.init_defs)(&mut svg);
+        if let Some(ref f) = self.init_defs {
+            f(&mut svg);
+        }
 
         let max = gw * gh;
 
@@ -89,85 +114,8 @@ pub fn a4_height<T: CDNum>() -> T {
     qcast(3508)
 }
 
-pub trait Card<NT: CDNum>: Clone {
+pub trait Card<NT: CDNum> {
     fn front<S: SvgWrite>(&self, svg: &mut S, w: NT, h: NT);
-}
-
-pub fn page<W: Write, NT: CDNum, C: Card<NT>>(
-    w: W,
-    pw: NT,
-    ph: NT,
-    nw: usize,
-    nh: usize,
-    cards: &[C],
-) {
-    let mut svg = SvgIO::new(w);
-    let mut svg = Tag::start(&mut svg, pw, ph);
-
-    let mw: NT = pw / qcast(20);
-    let mh: NT = ph / qcast(20);
-    let max = nw * nh;
-    let cw = (pw - qcast::<i32, NT>(2) * mw) / qcast(nw);
-    let ch = (ph - qcast::<i32, NT>(2) * mh) / qcast(nh);
-
-    for (i, c) in cards.iter().enumerate() {
-        if i == max {
-            break;
-        }
-
-        let x: NT = qcast(i % nw);
-        let y: NT = qcast(i / nw);
-        c.front(
-            &mut Tag::g().translate(mw + x * cw, mh + y * ch).wrap(&mut svg),
-            cw,
-            ch,
-        );
-        //let mut svg = svg.g_translate(mw + x * cw, mh + y * ch);
-        //c.front(&mut svg, cw, ch);
-    }
-}
-
-pub fn page_a4<W: Write, NT: CDNum, C: Card<NT>>(w: W, nw: usize, nh: usize, cards: &[C]) {
-    page(w, a4_width(), a4_height(), nw, nh, cards);
-}
-
-pub fn pages<NT: CDNum, C: Card<NT>, P: AsRef<Path>>(
-    basepath: P,
-    pw: NT,
-    ph: NT,
-    nw: usize,
-    nh: usize,
-    cards: &[C],
-) -> Result<Vec<PathBuf>, Error> {
-    let mut res = Vec::new();
-    let total = nw * nh;
-
-    let cpath: &Path = basepath.as_ref();
-    let cname = OsString::from(cpath.file_name().unwrap_or(&OsStr::new("")));
-
-    if cards.len() == 0 {
-        return Ok(res);
-    }
-
-    for i in 0..((cards.len() - 1) / total) + 1 {
-        let mut path = PathBuf::from(cpath.parent().unwrap_or(Path::new("")));
-        let mut fname = cname.clone();
-        fname.push(&format!("{}.svg", i));
-        path.push(fname);
-        let w = File::create(&path)?;
-        page(w, pw, ph, nw, nh, &cards[i * total..]);
-        res.push(path);
-    }
-    Ok(res)
-}
-
-pub fn pages_a4<NT: CDNum, C: Card<NT>, P: AsRef<Path>>(
-    basepath: P,
-    nw: usize,
-    nh: usize,
-    cards: &[C],
-) -> Result<Vec<PathBuf>, Error> {
-    pages(basepath, a4_width(), a4_height(), nw, nh, cards)
 }
 
 /// flip the items in groups 'w' big/wide
@@ -257,4 +205,26 @@ pub fn unite_as_pdf<P: AsRef<Path>, Q: AsRef<Path>>(v: Vec<P>, fpath: Q) -> bool
         .expect("could not unite the pdfs");
 
     true
+}
+
+#[cfg(test)]
+mod page_test {
+    use super::*;
+    use crate::write::SvgFmt;
+    pub struct NumCard(i32);
+    impl Card<i32> for NumCard {
+        fn front<S: SvgWrite>(&self, s: &mut S, _w: i32, _h: i32) {
+            s.write(&self.0.to_string());
+        }
+    }
+    #[test]
+    pub fn test_closure_works_with_page_write() {
+        let mut s = String::new();
+        let mut svg = SvgFmt::new(&mut s);
+        Pages::build(&[NumCard(4050)])
+            .init_page(&|ref mut w| Tag::rect(0, 0, 5, 5).write(w))
+            .write_page(&mut svg, 0);
+
+        assert_eq!(s, "<?xml version=\"1.0\" ?>\n<svg width=\"2480\" height=\"3508\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" >\n  <rect x=\"0\" y=\"0\" width=\"5\" height=\"5\" />\n  <g transform=\"translate(20,20) \" >\n    4050\n  </g>\n</svg>\n");
+    }
 }
