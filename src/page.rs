@@ -7,6 +7,68 @@ use std::process::Command;
 
 use crate::write::{qcast, CDNum, SvgIO, SvgWrite};
 
+pub struct Pages<'a,NT: CDNum, C,F>
+{
+    cards:&'a[C],
+    page_dims: Option<(NT,NT)>,
+    grid_shape: Option<(isize,isize)>,
+    card_size: Option<(NT,NT)>,
+    init_defs: F,
+}
+
+
+
+impl<'a,NT:CDNum,F,C:Card<NT>> Pages<'a,NT,C,F> 
+    where F:Fn(&mut SvgWrite )
+{
+    pub fn build(c:&'a[C]) ->Pages<'a,NT,C,F>{
+        Pages {
+            cards:c,
+            page_dims:None, 
+            grid_shape:None,
+            card_size:None,
+            init_defs: |_:&mut SvgWrite|{},
+        }
+    }
+
+
+    pub fn write_page<W:SvgWrite>(&self, svg:W){
+        let (pw,ph) = self.page_dims.unwrap_or((a4_width(),a4_height()));
+        let (gw,gh) = self.grid_shape.unwrap_or((4,4));
+        let (cw,ch) = self.card_size.unwrap_or({
+            let cw = (pw - qcast::<i32, NT>(40)) / qcast(gw);
+            let ch = (ph - qcast::<i32, NT>(40)) / qcast(gh);
+            (cw,ch)
+        });
+            
+        let mut svg = svg.start(pw, ph);
+        (self.init_defs)(&mut svg);
+
+    let mw: NT = pw / qcast(20);
+    let mh: NT = ph / qcast(20);
+    let max = nw * nh;
+    let cw = (pw - qcast::<i32, NT>(2) * mw) / qcast(nw);
+    let ch = (ph - qcast::<i32, NT>(2) * mh) / qcast(nh);
+
+    for (i, c) in cards.iter().enumerate() {
+        if i == max {
+            break;
+        }
+
+        let x: NT = qcast(i % nw);
+        let y: NT = qcast(i / nw);
+        c.front(&mut svg.g_translate(mw + x * cw, mh + y * ch), cw, ch);
+        //let mut svg = svg.g_translate(mw + x * cw, mh + y * ch);
+        //c.front(&mut svg, cw, ch);
+    }
+
+    }
+
+    pub fn write_pages(f_base:String){
+    }
+
+}
+
 pub fn a4_width<T: CDNum>() -> T {
     qcast(2480)
 }
