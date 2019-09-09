@@ -1,5 +1,3 @@
-use crate::args::{Args, SvgArg};
-
 use num;
 use std::fmt::{Debug, Display};
 
@@ -84,118 +82,24 @@ impl<W: FmtWrite> SvgWrite for SvgFmt<W> {
 }
 /// the methods on SvgWrite, do not build any structure
 /// they simply write the output, so if you open something (g or svg) don't forget to close it.
-pub trait SvgWrite: Sized {
+pub trait SvgWrite {
     fn write(&mut self, s: &str);
     fn inc_depth(&mut self, n: i8);
-
-    ///writes a simple prelude for an svg file
-    fn start<T: CDNum>(&mut self, w: T, h: T) -> TransWrap<Self> {
-        self.write("<?xml version=\"1.0\" ?>");
-        self.any_o(
-            "svg",
-            &Args::new()
-                .w(w)
-                .h(h)
-                .arg("xmlns", "http://www.w3.org/2000/svg")
-                .arg("xmlns:xlink", "http://www.w3.org/1999/xlink"),
-            "</svg>",
-        )
-    }
-
-    fn g(&mut self, args: Args) -> TransWrap<Self> {
-        self.any_o("g", &args, "</g>")
-    }
-
-    fn g_translate<T: CDNum>(&mut self, x: T, y: T) -> TransWrap<Self> {
-        self.g(Args::new().translate(x, y))
-    }
-
-    fn g_rotate<T: CDNum>(&mut self, ang: T, x: T, y: T) -> TransWrap<Self> {
-        self.g(Args::new().rotate(ang, x, y))
-    }
-
-    fn any(&mut self, name: &str, args: &Args) {
-        self.write(&format!("<{} {}/>", name, args));
-    }
-
-    fn any_o(&mut self, name: &str, args: &Args, close: &'static str) -> TransWrap<Self> {
-        TransWrap::new(self, &format!("<{} {}>", name, args), close)
-    }
-
-    fn rect<T: CDNum>(&mut self, x: T, y: T, w: T, h: T, args: Args) {
-        self.any("rect", &args.x(x).y(y).w(w).h(h));
-    }
-
-    fn ellipse<T: CDNum>(&mut self, cx: T, cy: T, rx: T, ry: T, args: Args) {
-        self.any("ellipse", &args.cx(cx).cy(cy).rx(rx).ry(ry));
-    }
-
-    fn text<T: CDNum>(&mut self, tx: &str, x: T, y: T, fs: T, args: Args) {
-        self.write(&format!(
-            "<text {} >{}</text>",
-            args.x(x).y(y).font_size(fs),
-            tx
-        ));
-    }
-
-    /// text_lines provides a simple way of printing multiline text
-    /// dy is the distance down y has to be.
-    fn text_lines<T: CDNum>(&mut self, tx: &str, x: T, y: T, fs: T, dy: T, args: Args) {
-        let lns = tx.split("\n");
-        let mut ln_y: T = y;
-        for ln in lns {
-            self.text(&ln, x, ln_y, fs, args.clone());
-            ln_y = ln_y + dy;
-        }
-    }
-
-    /// svg has a foible, where a wide stroke on text, hides the text.
-    /// this method provides a workaround, printing the text twice.
-    /// the back copy has the stroke, so all the front letters remain intact.
-    fn bg_text<T: CDNum>(&mut self, tx: &str, x: T, y: T, fs: T, sw: T, scol: &str, args: Args) {
-        self.text(tx, x, y, fs, args.clone().stroke_width(sw).stroke(scol));
-        self.text(tx, x, y, fs, args.stroke("none"));
-    }
-
-    /// multiple lines with the background workaround
-    fn bg_text_lines<T: CDNum>(
-        &mut self,
-        tx: &str,
-        x: T,
-        y: T,
-        fs: T,
-        dy: T,
-        sw: T,
-        scol: &str,
-        args: Args,
-    ) {
-        let p = args.font_size(fs);
-        self.text_lines(tx, x, y, fs, dy, p.clone().stroke_width(sw).stroke(scol));
-        self.text_lines(tx, x, y, fs, dy, p.stroke("none"));
-    }
-
-    fn img<T: Display>(&mut self, loc: &str, x: T, y: T, w: T, h: T) {
-        self.any("image", &Args::new().x(x).y(y).w(w).h(h).href(loc));
-    }
-
-    fn path<T: Display>(&mut self, pathd: T, args: Args) {
-        self.any("path", &args.d(pathd));
-    }
 }
 
-pub struct TransWrap<'a, W: 'a + SvgWrite> {
+pub struct TransWrap<'a> {
     start: Option<String>,
     td_inc: i8,
-    end: &'static str,
-    w: &'a mut W,
+    end: String,
+    w: &'a mut SvgWrite,
 }
 
-impl<'a, W: SvgWrite> TransWrap<'a, W> {
-    pub fn new(w: &'a mut W, begin: &str, end: &'static str) -> Self {
+impl<'a> TransWrap<'a> {
+    pub fn new(w: &'a mut SvgWrite, begin: &str, end: &str) -> Self {
         TransWrap {
             start: Some(begin.to_string()),
             td_inc: 1,
-            end,
+            end: end.to_string(),
             w,
         }
     }
@@ -209,7 +113,7 @@ impl<'a, W: SvgWrite> TransWrap<'a, W> {
     }
 }
 
-impl<'a, W: SvgWrite> SvgWrite for TransWrap<'a, W> {
+impl<'a> SvgWrite for TransWrap<'a> {
     fn write(&mut self, s: &str) {
         self.force();
         self.w.write(s);
@@ -220,11 +124,11 @@ impl<'a, W: SvgWrite> SvgWrite for TransWrap<'a, W> {
     }
 }
 
-impl<'a, W: SvgWrite> Drop for TransWrap<'a, W> {
+impl<'a> Drop for TransWrap<'a> {
     fn drop(&mut self) {
         if self.start == None {
             self.w.inc_depth(-self.td_inc);
-            self.w.write(self.end);
+            self.w.write(&self.end);
         }
     }
 }

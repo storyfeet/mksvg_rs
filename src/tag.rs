@@ -1,5 +1,5 @@
 use crate::args::{Args, SvgArg};
-use crate::write::SvgWrite;
+use crate::write::{CDNum, SvgWrite, TransWrap};
 use std::fmt;
 use std::fmt::Display;
 
@@ -10,6 +10,18 @@ pub struct Tag {
 }
 
 impl Tag {
+    /// Use this function to wrap the first svg tag, as it also writes the namespace to the top of
+    /// the doc
+    pub fn start<'a,W:SvgWrite,T:CDNum>(wr:&'a mut W,w:T,h:T)->TransWrap<'a>{
+        wr.write(r#"<?xml version="1.0" ?>"#);
+        Tag::svg(w,h).wrap(wr)
+    }
+
+    fn svg<T:CDNum>(w:T,h:T) -> Self {
+        Tag::new("svg").w(w).h(h)
+            .arg("xmlns", "http://www.w3.org/2000/svg")
+            .arg("xmlns:xlink", "http://www.w3.org/1999/xlink")
+    }
     pub fn new(name: &'static str) -> Self {
         Tag {
             name,
@@ -28,9 +40,27 @@ impl Tag {
     pub fn path<P: Display>(p: P) -> Self {
         Tag::new("path").d(p)
     }
+
+    pub fn g() -> Self {
+        Tag::new("g")
+    }
+
+    pub fn defs()->Self{
+        Tag::new("defs")
+    }
+
+    pub fn clip_path()->Self{
+        Tag::new("clipPath")
+    }
+
     pub fn write<W: SvgWrite>(&self, w: &mut W) {
         w.write(&self.to_string());
     }
+
+    pub fn wrap<'a, W: SvgWrite>(&self, w: &'a mut W) -> TransWrap<'a> {
+        TransWrap::new(w,&format!("<{} {}>",self.name,self.args),&format!("</{}>",self.name))
+    }
+
 }
 
 impl SvgArg for Tag {
@@ -50,6 +80,6 @@ impl SvgArg for Tag {
 
 impl Display for Tag {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "<{} {} />", self.name, self.args)
+        write!(f, "<{} {}/>", self.name, self.args)
     }
 }

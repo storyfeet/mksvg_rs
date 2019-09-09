@@ -147,6 +147,10 @@ pub trait SvgArg: Sized + Display {
 
     //args
 
+    fn class<T: Display>(self, s: T) -> Self {
+        self.arg("class", s)
+    }
+
     fn d<T: Display>(self, n: T) -> Self {
         self.arg("d", n)
     }
@@ -159,7 +163,7 @@ pub trait SvgArg: Sized + Display {
     fn y<T: Display>(self, n: T) -> Self {
         self.arg("y", n)
     }
-    fn xy<T:Display>(self,x:T,y:T)->Self{
+    fn xy<T: Display>(self, x: T, y: T) -> Self {
         self.x(x).y(y)
     }
     fn cy<T: Display>(self, n: T) -> Self {
@@ -180,7 +184,7 @@ pub trait SvgArg: Sized + Display {
     fn height<T: Display>(self, n: T) -> Self {
         self.arg("height", n)
     }
-    fn wh<T:Display>(self,w:T,h:T) ->Self{
+    fn wh<T: Display>(self, w: T, h: T) -> Self {
         self.w(w).h(h)
     }
     fn href<T: Display>(self, n: T) -> Self {
