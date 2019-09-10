@@ -6,17 +6,18 @@ use crate::args::SvgArg;
 use crate::tag::Tag;
 use crate::write::{qcast, CDNum, SvgIO, SvgWrite};
 
-pub struct Pages<'a, NT: CDNum, C> {
-    cards: &'a [C],
+pub struct Pages<'a, NT: CDNum, C, CIT: Iterator<Item = C>> {
+    cards: CIT,
     flip: bool,
     page_dims: Option<(NT, NT)>,
     grid_shape: Option<(usize, usize)>,
     card_size: Option<(NT, NT)>,
     init_defs: Option<&'a for<'r> Fn(&'r mut (dyn SvgWrite + 'r))>,
+    //pc: std::marker::PhantomData<C>,
 }
 
-impl<'a, NT: CDNum, C: Card<NT>> Pages<'a, NT, C> {
-    pub fn build(c: &'a [C]) -> Pages<'a, NT, C> {
+impl<'a, NT: CDNum, C: Card<NT>, CIT: Iterator<Item = C>> Pages<'a, NT, C, CIT> {
+    pub fn build(c: CIT) -> Pages<'a, NT, C, CIT> {
         Pages {
             cards: c,
             flip: false,
@@ -27,32 +28,32 @@ impl<'a, NT: CDNum, C: Card<NT>> Pages<'a, NT, C> {
         }
     }
 
-    pub fn flip(&mut self) -> &mut Self {
+    pub fn flip(mut self) -> Self {
         self.flip = true;
         self
     }
 
-    pub fn page_size(&mut self, w: NT, h: NT) -> &mut Self {
+    pub fn page_size(mut self, w: NT, h: NT) -> Self {
         self.page_dims = Some((w, h));
         self
     }
 
-    pub fn grid_size(&mut self, nw: usize, nh: usize) -> &mut Self {
+    pub fn grid_size(mut self, nw: usize, nh: usize) -> Self {
         self.grid_shape = Some((nw, nh));
         self
     }
 
-    pub fn card_size(&mut self, cw: NT, ch: NT) -> &mut Self {
+    pub fn card_size(mut self, cw: NT, ch: NT) -> Self {
         self.card_size = Some((cw, ch));
         self
     }
 
-    pub fn init_page(&'a mut self, f: &'a for<'r> Fn(&'r mut (dyn SvgWrite + 'r))) -> &'a mut Self {
+    pub fn init_page(mut self, f: &'a for<'r> Fn(&'r mut (dyn SvgWrite + 'r))) -> Self {
         self.init_defs = Some(f);
         self
     }
 
-    pub fn write_page<W: SvgWrite>(&self, svg: &'a mut W, offset: usize) {
+    pub fn write_page<W: SvgWrite>(&mut self, svg: &mut W) -> bool {
         let (pw, ph) = self.page_dims.unwrap_or((a4_width(), a4_height()));
         let (gw, gh) = self.grid_shape.unwrap_or((4, 4));
         let (cw, ch) = self.card_size.unwrap_or({
@@ -71,13 +72,9 @@ impl<'a, NT: CDNum, C: Card<NT>> Pages<'a, NT, C> {
         }
 
         let max = gw * gh;
+        let mut i = 0;
 
-        let cards = &self.cards[offset..];
-
-        for (i, c) in cards.iter().enumerate() {
-            if i == max {
-                break;
-            }
+        while let Some(c) = self.cards.next() {
             let x: NT = if self.flip {
                 qcast(gw - (i % gw))
             } else {
@@ -86,27 +83,44 @@ impl<'a, NT: CDNum, C: Card<NT>> Pages<'a, NT, C> {
             let y: NT = qcast(i / gw);
             let mut c_loc = Tag::g().translate(mw + x * cw, mh + y * ch).wrap(&mut svg);
             c.front(&mut c_loc, cw, ch);
+
+            i += 1;
+            if i == max {
+                return true;
+            }
         }
+        i > 0
     }
 
-    pub fn write_pages(&self, f_base: String) -> Result<Vec<String>, failure::Error> {
+    pub fn write_pages(&mut self, f_base: String) -> Result<Vec<String>, failure::Error> {
         let mut res = Vec::new();
-        let (gw, gh) = self.grid_shape.unwrap_or((4, 4));
 
-        let page_max = gw * gh;
-
-        if self.cards.len() == 0 {
-            return Ok(res);
-        }
-
-        for i in 0..((self.cards.len() - 1) / page_max) + 1 {
+        for i in 0.. {
             let fname = format!("{}{}.svg", f_base, i);
             let w = File::create(&fname)?;
             let mut svg = SvgIO::new(w);
-            self.write_page(&mut svg, i * page_max);
+            if !self.write_page(&mut svg) {
+                return Ok(res);
+            }
             res.push(fname);
         }
         Ok(res)
+    }
+}
+impl<'a, NT: CDNum, C: Card<NT> + Count + Clone, CIT: Iterator<Item = C>> Pages<'a, NT, C, CIT> {
+    pub fn spread(self) -> Pages<'a, NT, C, SpreadIter<CIT, C>> {
+        Pages {
+            cards: SpreadIter {
+                it: self.cards,
+                curr: None,
+                n: 0,
+            },
+            card_size: self.card_size,
+            grid_shape: self.grid_shape,
+            flip: self.flip,
+            init_defs: self.init_defs,
+            page_dims: self.page_dims,
+        }
     }
 }
 
@@ -210,6 +224,39 @@ pub fn unite_as_pdf<P: AsRef<Path>, Q: AsRef<Path>>(v: Vec<P>, fpath: Q) -> bool
     true
 }
 
+pub trait Count {
+    fn count(&self) -> usize;
+}
+
+pub struct SpreadIter<CIT: Iterator<Item = C>, C: Count + Clone> {
+    it: CIT,
+    curr: Option<C>,
+    n: usize,
+}
+
+impl<CIT: Iterator<Item = C>, C: Count + Clone> Iterator for SpreadIter<CIT, C> {
+    type Item = C;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.curr.is_none() {
+            self.curr = self.it.next();
+            self.n = 0;
+        };
+        match self.curr.as_ref() {
+            Some(c) => {
+                if self.n >= c.count() {
+                    self.n = 1;
+                    self.curr = self.it.next();
+                    self.curr.clone()
+                } else {
+                    self.n += 1;
+                    self.curr.clone()
+                }
+            }
+            None => None,
+        }
+    }
+}
+
 #[cfg(test)]
 mod page_test {
     use super::*;
@@ -224,10 +271,31 @@ mod page_test {
     pub fn test_closure_works_with_page_write() {
         let mut s = String::new();
         let mut svg = SvgFmt::new(&mut s);
-        Pages::build(&[NumCard(4050)])
+        let v = vec![NumCard(4050)];
+        Pages::build(v.into_iter())
             .init_page(&|ref mut w| Tag::rect(0, 0, 5, 5).write(w))
-            .write_page(&mut svg, 0);
+            .write_page(&mut svg);
 
         assert_eq!(s, "<?xml version=\"1.0\" ?>\n<svg width=\"2480\" height=\"3508\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" >\n  <rect x=\"0\" y=\"0\" width=\"5\" height=\"5\" />\n  <g transform=\"translate(20,20) \" >\n    4050\n  </g>\n</svg>\n");
+    }
+
+    #[derive(Clone, Debug)]
+    pub struct Counter(usize);
+    impl Count for Counter {
+        fn count(&self) -> usize {
+            self.0
+        }
+    }
+
+    #[test]
+    pub fn test_spread_iter_gets_all_the_counts() {
+        let v = vec![Counter(3), Counter(4), Counter(1)];
+        let si = SpreadIter {
+            it: v.into_iter(),
+            curr: None,
+            n: 0,
+        };
+        let nums: Vec<usize> = si.map(|v| v.0).collect();
+        assert_eq!(nums, vec![3, 3, 3, 4, 4, 4, 4, 1]);
     }
 }

@@ -22,6 +22,7 @@ impl<C: CDNum> Text<C> {
         let s: &str = s.as_ref();
         Self::lines(s.split("\n"), x, y, lh)
     }
+
     pub fn lines<I, S>(it: I, x: C, y: C, lh: C) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -36,6 +37,18 @@ impl<C: CDNum> Text<C> {
             line_height: lh,
         }
     }
+
+    pub fn wrap(mut self, n: usize) -> Self {
+        let mut res = Vec::new();
+        for s in self.ss {
+            for r in wrap(&s, n) {
+                res.push(r);
+            }
+        }
+        self.ss = res;
+        self
+    }
+
     pub fn v_center(mut self) -> Self {
         self.y = self.y - self.line_height * qcast(self.ss.len() as f64 / 2.);
         self
