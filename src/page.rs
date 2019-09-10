@@ -13,7 +13,6 @@ pub struct Pages<'a, NT: CDNum, C> {
     grid_shape: Option<(usize, usize)>,
     card_size: Option<(NT, NT)>,
     init_defs: Option<&'a for<'r> Fn(&'r mut (dyn SvgWrite + 'r))>,
-    //init_defs: Option<Box<Fn(&mut SvgWrite)>>,
 }
 
 impl<'a, NT: CDNum, C: Card<NT>> Pages<'a, NT, C> {
@@ -79,7 +78,11 @@ impl<'a, NT: CDNum, C: Card<NT>> Pages<'a, NT, C> {
             if i == max {
                 break;
             }
-            let x: NT = qcast(i % gw);
+            let x: NT = if self.flip {
+                qcast(gw - (i % gw))
+            } else {
+                qcast(i % gw)
+            };
             let y: NT = qcast(i / gw);
             let mut c_loc = Tag::g().translate(mw + x * cw, mh + y * ch).wrap(&mut svg);
             c.front(&mut c_loc, cw, ch);
