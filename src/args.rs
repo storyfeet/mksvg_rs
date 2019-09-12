@@ -187,7 +187,10 @@ pub trait SvgArg: Sized + Display {
     fn wh<T: Display>(self, w: T, h: T) -> Self {
         self.w(w).h(h)
     }
-    fn href<T: Display>(self, n: T) -> Self {
+    fn href<T:Display>(self,n:T)->Self{
+        self.arg("href",n)
+    }
+    fn xhref<T: Display>(self, n: T) -> Self {
         self.arg("xlink:href", n)
     }
     fn text_anchor<T: Display>(self, n: T) -> Self {

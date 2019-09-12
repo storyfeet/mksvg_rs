@@ -49,6 +49,10 @@ impl Tag {
         Tag::new("defs")
     }
 
+    pub fn use_tag<T:Display>(href:T)->Self{
+        Tag::new("use").href(href)
+    }
+
     pub fn clip_path()->Self{
         Tag::new("clipPath")
     }

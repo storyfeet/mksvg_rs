@@ -15,6 +15,7 @@ pub struct Text<C: CDNum> {
     x: C,
     y: C,
     line_height: C,
+    font_size_set: bool,
 }
 
 impl<C: CDNum> Text<C> {
@@ -30,11 +31,12 @@ impl<C: CDNum> Text<C> {
     {
         Text {
             ss: it.into_iter().map(|v| v.as_ref().to_string()).collect(),
-            args: Args::new().font_size(lh),
+            args: Args::new(),
             back: None,
             x,
             y,
             line_height: lh,
+            font_size_set: false,
         }
     }
 
@@ -65,10 +67,11 @@ impl<C: CDNum> Text<C> {
 
     pub fn write<S: SvgWrite>(&self, s: &mut S) {
         for (n, l) in self.ss.iter().enumerate() {
-            let a = self
-                .args
-                .clone()
-                .xy(self.x, self.y + self.line_height * qcast(n));
+            let mut a = self.args.clone();
+            if !self.font_size_set {
+                a = a.font_size(self.line_height)
+            }
+            a = a.xy(self.x, self.y + self.line_height * qcast(n));
             if let Some((w, ref col)) = self.back {
                 let a2 = a.clone().stroke_width(w).stroke(col);
                 s.write(&format!("<text {}>{}</text>", a2, l));
@@ -95,6 +98,12 @@ impl<C: CDNum + Debug> SvgArg for Text<C> {
     }
     fn transform<T: Display>(mut self, k: &str, args: &[T]) -> Self {
         self.args = self.args.transform(k, args);
+        self
+    }
+
+    fn font_size<T: Display>(mut self, t: T) -> Self {
+        self.font_size_set = true;
+        self.args = self.args.font_size(t);
         self
     }
 }

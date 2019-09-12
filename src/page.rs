@@ -53,7 +53,7 @@ impl<'a, NT: CDNum, C: Card<NT>, CIT: Iterator<Item = C>> Pages<'a, NT, C, CIT> 
         self
     }
 
-    pub fn write_page<W: SvgWrite>(&mut self, svg: &mut W) -> bool {
+    pub fn write_page<W: SvgWrite>(&mut self, svg: &mut W) -> usize {
         let (pw, ph) = self.page_dims.unwrap_or((a4_width(), a4_height()));
         let (gw, gh) = self.grid_shape.unwrap_or((4, 4));
         let (cw, ch) = self.card_size.unwrap_or({
@@ -86,25 +86,28 @@ impl<'a, NT: CDNum, C: Card<NT>, CIT: Iterator<Item = C>> Pages<'a, NT, C, CIT> 
 
             i += 1;
             if i == max {
-                return true;
+                return i;
             }
         }
-        i > 0
+        i
     }
 
-    pub fn write_pages(&mut self, f_base: String) -> Result<Vec<String>, failure::Error> {
+    pub fn write_pages(&mut self, f_base: String) -> Result<(usize, Vec<String>), failure::Error> {
         let mut res = Vec::new();
+        let mut tot_printed = 0;
 
         for i in 0.. {
             let fname = format!("{}{}.svg", f_base, i);
             let w = File::create(&fname)?;
             let mut svg = SvgIO::new(w);
-            if !self.write_page(&mut svg) {
-                return Ok(res);
+            let printed = self.write_page(&mut svg);
+            if printed == 0 {
+                return Ok((tot_printed, res));
             }
+            tot_printed += printed;
             res.push(fname);
         }
-        Ok(res)
+        Ok((tot_printed, res))
     }
 }
 impl<'a, NT: CDNum, C: Card<NT> + Count + Clone, CIT: Iterator<Item = C>> Pages<'a, NT, C, CIT> {
