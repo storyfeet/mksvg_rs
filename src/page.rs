@@ -92,12 +92,15 @@ impl<'a, NT: CDNum, C: Card<NT>, CIT: Iterator<Item = C>> Pages<'a, NT, C, CIT> 
         i
     }
 
-    pub fn write_pages(&mut self, f_base: String) -> Result<(usize, Vec<String>), failure::Error> {
+    pub fn write_pages<S: AsRef<str>>(
+        &mut self,
+        f_base: S,
+    ) -> Result<(usize, Vec<String>), failure::Error> {
         let mut res = Vec::new();
         let mut tot_printed = 0;
 
         for i in 0.. {
-            let fname = format!("{}{}.svg", f_base, i);
+            let fname = format!("{}{}.svg", f_base.as_ref(), i);
             let w = File::create(&fname)?;
             let mut svg = SvgIO::new(w);
             let printed = self.write_page(&mut svg);

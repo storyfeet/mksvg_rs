@@ -11,6 +11,7 @@
 //!
 
 pub mod args;
+pub mod macros;
 pub mod page;
 pub mod path;
 pub mod tag;

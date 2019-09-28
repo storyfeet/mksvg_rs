@@ -12,13 +12,15 @@ pub struct Tag {
 impl Tag {
     /// Use this function to wrap the first svg tag, as it also writes the namespace to the top of
     /// the doc
-    pub fn start<'a,W:SvgWrite,T:CDNum>(wr:&'a mut W,w:T,h:T)->TransWrap<'a>{
+    pub fn start<'a, W: SvgWrite, T: CDNum>(wr: &'a mut W, w: T, h: T) -> TransWrap<'a> {
         wr.write(r#"<?xml version="1.0" ?>"#);
-        Tag::svg(w,h).wrap(wr)
+        Tag::svg(w, h).wrap(wr)
     }
 
-    fn svg<T:CDNum>(w:T,h:T) -> Self {
-        Tag::new("svg").w(w).h(h)
+    fn svg<T: CDNum>(w: T, h: T) -> Self {
+        Tag::new("svg")
+            .w(w)
+            .h(h)
             .arg("xmlns", "http://www.w3.org/2000/svg")
             .arg("xmlns:xlink", "http://www.w3.org/1999/xlink")
     }
@@ -45,15 +47,15 @@ impl Tag {
         Tag::new("g")
     }
 
-    pub fn defs()->Self{
+    pub fn defs() -> Self {
         Tag::new("defs")
     }
 
-    pub fn use_tag<T:Display>(href:T)->Self{
+    pub fn use_tag<T: Display>(href: T) -> Self {
         Tag::new("use").href(href)
     }
 
-    pub fn clip_path()->Self{
+    pub fn clip_path() -> Self {
         Tag::new("clipPath")
     }
 
@@ -62,9 +64,12 @@ impl Tag {
     }
 
     pub fn wrap<'a, W: SvgWrite>(&self, w: &'a mut W) -> TransWrap<'a> {
-        TransWrap::new(w,&format!("<{} {}>",self.name,self.args),&format!("</{}>",self.name))
+        TransWrap::new(
+            w,
+            &format!("<{} {}>", self.name, self.args),
+            &format!("</{}>", self.name),
+        )
     }
-
 }
 
 impl SvgArg for Tag {
