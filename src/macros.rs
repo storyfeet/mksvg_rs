@@ -16,13 +16,14 @@ macro_rules! svg_properties {
 macro_rules! svg_w {
     //simple svg component
     ($wr:ident, ($nm:ident $($k:ident=$v:tt)*)) => {
-        svg_properties!(Tag::new(stringify!($nm)), $(($k,$v),)*).write(&mut $wr);
+        svg_properties!(Tag::new(stringify!($nm)), $(($k,$v),)*).write($wr);
     };
     //wrapping svg component
     ($wr:ident, ($nm:ident $($k:ident=$v:tt)* : $($child:tt)* ))=> {
-        let mut nw = svg_properties!(Tag::new(stringify!($nm)), $(($k,$v),),*).wrap(&mut $wr);
+        let mut nw = svg_properties!(Tag::new(stringify!($nm)), $(($k,$v),),*).wrap($wr);
+        let nwp = &mut nw;
         $(
-            svg_w!(nw , $child);
+            svg_w!(nwp , $child);
         )*
 
         drop(nw);
@@ -44,11 +45,11 @@ macro_rules! svg_w {
 
     ($wr:ident,(|$n:ident|  $e:tt))=> {
         let f = |$n:&mut dyn SvgWrite|$e;
-        f(&mut $wr);
+        f($wr);
     };
-    ($wr:ident,$($ch:block)+)=>{
+    ($wr:ident,$($ch:tt)+)=>{
         $(
-            svg_w!($wr,$ch)
+            svg_w!($wr,$ch);
         )+
     };
 
@@ -63,7 +64,8 @@ mod test_macros {
     fn test_svg_properties() {
         let mut s = String::new();
         let mut fw = SvgFmt::new(&mut s);
-        svg_w!(fw,(rect w=5));
+        let fwp = &mut fw;
+        svg_w!(fwp,(rect w=5));
         drop(fw);
         assert_eq!(s, "<rect width=\"5\" />\n");
     }
@@ -84,7 +86,8 @@ mod test_macros {
     fn test_wrapping_works() {
         let mut s = String::new();
         let mut fw = SvgFmt::new(&mut s);
-        svg_w! {fw,
+        let fwp = &mut fw;
+        svg_w! {fwp,
             ( g w=3:
                 (rect x=3 y=2)
             )
@@ -97,7 +100,8 @@ mod test_macros {
     fn test_multi_param_properties() {
         let mut s = String::new();
         let mut fw = SvgFmt::new(&mut s);
-        svg_w! {fw,
+        let fwp = &mut fw;
+        svg_w! {fwp,
             ( g translate=(3,4):
                 (rect x=3 y=2)
             )
@@ -113,7 +117,8 @@ mod test_macros {
     fn test_deep_wrapping() {
         let mut s = String::new();
         let mut fw = SvgFmt::new(&mut s);
-        svg_w! {fw,
+        let fwp = &mut fw;
+        svg_w! {fwp,
             ( g translate=(3,4):
                 (g rotate=(15,24,45) :
                     (ellipse x=5 y=2)
@@ -132,7 +137,8 @@ mod test_macros {
     fn test_loop() {
         let mut s = String::new();
         let mut fw = SvgFmt::new(&mut s);
-        svg_w! {fw,
+        let fwp = &mut fw;
+        svg_w! {fwp,
             (@for n in 0..4 =>
                 (rect x=n)
             )
@@ -148,7 +154,8 @@ mod test_macros {
     fn test_macro_closure() {
         let mut s = String::new();
         let mut fw = SvgFmt::new(&mut s);
-        svg_w! {fw,
+        let fwp = &mut fw;
+        svg_w! {fwp,
             (text text_anchor="middle" :
                 (|v| {v.write("hello")})
             )
