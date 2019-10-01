@@ -12,7 +12,7 @@ pub struct Pages<'a, NT: CDNum, C, CIT: Iterator<Item = C>> {
     page_dims: Option<(NT, NT)>,
     grid_shape: Option<(usize, usize)>,
     card_size: Option<(NT, NT)>,
-    init_defs: Option<&'a for<'r> Fn(&'r mut (dyn SvgWrite + 'r))>,
+    init_defs: Option<&'a dyn for<'r> Fn(&'r mut (dyn SvgWrite + 'r))>,
     //pc: std::marker::PhantomData<C>,
 }
 
@@ -48,7 +48,7 @@ impl<'a, NT: CDNum, C: Card<NT>, CIT: Iterator<Item = C>> Pages<'a, NT, C, CIT> 
         self
     }
 
-    pub fn init_page(mut self, f: &'a for<'r> Fn(&'r mut (dyn SvgWrite + 'r))) -> Self {
+    pub fn init_page(mut self, f: &'a dyn for<'r> Fn(&'r mut (dyn SvgWrite + 'r))) -> Self {
         self.init_defs = Some(f);
         self
     }

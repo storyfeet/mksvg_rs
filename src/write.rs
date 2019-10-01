@@ -101,11 +101,11 @@ pub struct TransWrap<'a> {
     start: Option<String>,
     td_inc: i8,
     end: String,
-    w: &'a mut SvgWrite,
+    w: &'a mut dyn SvgWrite,
 }
 
 impl<'a> TransWrap<'a> {
-    pub fn new(w: &'a mut SvgWrite, begin: &str, end: &str) -> Self {
+    pub fn new(w: &'a mut dyn SvgWrite, begin: &str, end: &str) -> Self {
         TransWrap {
             start: Some(begin.to_string()),
             td_inc: 1,

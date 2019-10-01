@@ -43,9 +43,14 @@ macro_rules! svg_w {
     };
 
     ($wr:ident,(|$n:ident|  $e:tt))=> {
-        let f = |$n:&mut SvgWrite|$e;
+        let f = |$n:&mut dyn SvgWrite|$e;
         f(&mut $wr);
-    }
+    };
+    ($wr:ident,$($ch:block)+)=>{
+        $(
+            svg_w!($wr,$ch)
+        )+
+    };
 
 }
 
