@@ -6,6 +6,8 @@ macro_rules! svg_properties {
     ($e:expr,) => {
         $e
     };
+    //case with empty rhs
+    ($e:expr, ($p:ident , ()),$($rest:tt)*) => (svg_properties!($e.$p(),$($rest)*));
     //case with bracketed properties
     ($e:expr, ($p:ident , ($($v:expr),*)),$($rest:tt)*) => (svg_properties!($e.$p($($v),*),$($rest)*));
     //standard case
@@ -46,6 +48,9 @@ macro_rules! svg_w {
     ($wr:ident,(|$n:ident|  $e:tt))=> {
         let f = |$n:&mut dyn SvgWrite|$e;
         f($wr);
+    };
+    ($wr:ident,[$l:expr , $x:expr,$y:expr,$lh:expr ,$($k:ident=$v:tt)*])=>{
+        svg_properties!( Text::lines($l,$x,$y,$lh) , $(($k,$v),)*).write($wr);
     };
     ($wr:ident,$($ch:tt)+)=>{
         $(
