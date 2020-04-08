@@ -20,7 +20,6 @@ pub mod text;
 pub mod write;
 
 pub use crate::args::{Args, SvgArg};
-pub use crate::page::Card;
 pub use crate::path::PathD;
 pub use crate::tag::Tag;
 pub use crate::text::{wrap, Text};

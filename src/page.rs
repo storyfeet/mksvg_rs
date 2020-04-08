@@ -131,10 +131,6 @@ pub fn a4_height<T: CDNum>() -> T {
     qcast(3508)
 }
 
-pub trait Card<NT: CDNum> {
-    fn front<S: SvgWrite>(&self, svg: &mut S, w: NT, h: NT);
-}
-
 /// flip the items in groups 'w' big/wide
 ///
 /// It is intended for printing the backs of cards, so flips them "horisontally"
