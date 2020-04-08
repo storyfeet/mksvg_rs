@@ -17,6 +17,7 @@ pub mod page;
 pub mod path;
 pub mod tag;
 pub mod text;
+pub mod unit;
 pub mod write;
 
 pub use crate::args::{Args, SvgArg};
