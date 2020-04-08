@@ -1,7 +1,9 @@
 use crate::args::SvgArg;
+use crate::err::PageError;
 use crate::tag::Tag;
 use crate::unit::px;
 use crate::write::{qcast, CDNum, SvgIO, SvgWrite};
+use failure::Fail;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -51,11 +53,16 @@ impl<'a, NT: CDNum> Pages<'a, NT> {
         self
     }
 
-    pub fn write_page<W, I, C, F>(&mut self, svg: &mut W, it: &mut I, f: F) -> usize
+    pub fn write_page<W, I, C, F, E: Fail>(
+        &mut self,
+        svg: &mut W,
+        it: &mut I,
+        f: F,
+    ) -> Result<usize, PageError<E>>
     where
         W: SvgWrite,
         I: Iterator<Item = C>,
-        F: Fn(&mut dyn SvgWrite, NT, NT, C),
+        F: Fn(&mut dyn SvgWrite, NT, NT, C) -> Result<(), E>,
     {
         let (pw, ph) = self.page_dims.unwrap_or((a4_width(), a4_height()));
         let (gw, gh) = self.grid_shape.unwrap_or((4, 4));
@@ -85,17 +92,17 @@ impl<'a, NT: CDNum> Pages<'a, NT> {
             };
             let y: NT = qcast(i / gw);
             let mut c_loc = Tag::g().translate(mw + x * cw, mh + y * ch).wrap(&mut svg);
-            f(&mut c_loc, cw, ch, c);
+            f(&mut c_loc, cw, ch, c).map_err(|e| PageError::CardError(e))?;
 
             i += 1;
             if i == max {
-                return i;
+                return Ok(i);
             }
         }
-        i
+        Ok(i)
     }
 
-    pub fn write_pages<S, I, F, C>(
+    pub fn write_pages<S, I, F, C, E>(
         &mut self,
         f_base: S,
         it: &mut I,
@@ -104,7 +111,8 @@ impl<'a, NT: CDNum> Pages<'a, NT> {
     where
         S: AsRef<str>,
         I: Iterator<Item = C>,
-        F: Fn(&mut dyn SvgWrite, NT, NT, C),
+        F: Fn(&mut dyn SvgWrite, NT, NT, C) -> Result<(), E>,
+        E: Fail,
     {
         let mut res = Vec::new();
         let mut tot_printed = 0;
@@ -113,7 +121,7 @@ impl<'a, NT: CDNum> Pages<'a, NT> {
             let fname = format!("{}{}.svg", f_base.as_ref(), i);
             let w = File::create(&fname)?;
             let mut svg = SvgIO::new(w);
-            let printed = self.write_page(&mut svg, it, f);
+            let printed = self.write_page(&mut svg, it, f)?;
             if printed == 0 {
                 return Ok((tot_printed, res));
             }
