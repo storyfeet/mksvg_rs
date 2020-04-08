@@ -1,5 +1,5 @@
 use crate::args::{Args, SvgArg};
-use crate::write::{CDNum, SvgWrite, TransWrap};
+use crate::write::{SvgWrite, TransWrap};
 use std::fmt;
 use std::fmt::Display;
 
@@ -12,12 +12,12 @@ pub struct Tag {
 impl Tag {
     /// Use this function to wrap the first svg tag, as it also writes the namespace to the top of
     /// the doc
-    pub fn start<'a, W: SvgWrite, T: CDNum>(wr: &'a mut W, w: T, h: T) -> TransWrap<'a> {
+    pub fn start<'a, W: SvgWrite, T: Display>(wr: &'a mut W, w: T, h: T) -> TransWrap<'a> {
         wr.write(r#"<?xml version="1.0" ?>"#);
         Tag::svg(w, h).wrap(wr)
     }
 
-    fn svg<T: CDNum>(w: T, h: T) -> Self {
+    fn svg<T: Display>(w: T, h: T) -> Self {
         Tag::new("svg")
             .w(w)
             .h(h)

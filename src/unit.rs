@@ -8,6 +8,7 @@ pub fn px<T: Display>(t: T) -> Unit<T> {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 pub struct Unit<T: Display> {
     u: UnitType,
     pub v: T,
@@ -19,6 +20,7 @@ impl<T: Display> Display for Unit<T> {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum UnitType {
     Px,
     Mm,

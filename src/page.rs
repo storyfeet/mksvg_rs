@@ -1,10 +1,10 @@
+use crate::args::SvgArg;
+use crate::tag::Tag;
+use crate::unit::px;
+use crate::write::{qcast, CDNum, SvgIO, SvgWrite};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-
-use crate::args::SvgArg;
-use crate::tag::Tag;
-use crate::write::{qcast, CDNum, SvgIO, SvgWrite};
 
 pub struct Pages<'a, NT: CDNum> {
     flip: bool,
@@ -68,7 +68,7 @@ impl<'a, NT: CDNum> Pages<'a, NT> {
         let mw: NT = (pw - cw * qcast(gw)) / qcast(2);
         let mh: NT = (ph - ch * qcast(gh)) / qcast(2);
 
-        let mut svg = Tag::start(svg, pw, ph);
+        let mut svg = Tag::start(svg, px(pw), px(ph));
 
         if let Some(ref f) = self.init_defs {
             f(&mut svg);
@@ -237,6 +237,6 @@ mod page_test {
             .init_page(&|ref mut w| Tag::rect(0, 0, 5, 5).write(w))
             .write_page(&mut svg, &mut v.into_iter(), draw_card);
 
-        assert_eq!(s, "<?xml version=\"1.0\" ?>\n<svg width=\"2480\" height=\"3508\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" >\n  <rect x=\"0\" y=\"0\" width=\"5\" height=\"5\" />\n  <g transform=\"translate(20,20) \" >\n    4050\n  </g>\n</svg>\n");
+        assert_eq!(s, "<?xml version=\"1.0\" ?>\n<svg width=\"2480px\" height=\"3508px\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" >\n  <rect x=\"0\" y=\"0\" width=\"5\" height=\"5\" />\n  <g transform=\"translate(20,20) \" >\n    4050\n  </g>\n</svg>\n");
     }
 }
