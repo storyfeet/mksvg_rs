@@ -4,6 +4,7 @@ use crate::tag::Tag;
 use crate::unit::px;
 use crate::write::{qcast, CDNum, SvgIO, SvgWrite};
 use failure::Fail;
+use std::fmt::Debug;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -63,6 +64,7 @@ impl<'a, NT: CDNum> Pages<'a, NT> {
         W: SvgWrite,
         I: Iterator<Item = C>,
         F: Fn(&mut dyn SvgWrite, NT, NT, C) -> Result<(), E>,
+        C: Debug,
     {
         let (pw, ph) = self.page_dims.unwrap_or((a4_width(), a4_height()));
         let (gw, gh) = self.grid_shape.unwrap_or((4, 4));
@@ -113,9 +115,12 @@ impl<'a, NT: CDNum> Pages<'a, NT> {
         I: Iterator<Item = C>,
         F: Fn(&mut dyn SvgWrite, NT, NT, C) -> Result<(), E>,
         E: Fail,
+        C: Debug,
     {
         let mut res = Vec::new();
         let mut tot_printed = 0;
+        let (gw, gh) = self.grid_shape.unwrap_or((4, 4));
+        let cards_pp = gw * gh;
 
         for i in 0.. {
             let fname = format!("{}{}.svg", f_base.as_ref(), i);
@@ -126,6 +131,9 @@ impl<'a, NT: CDNum> Pages<'a, NT> {
                 return Ok((tot_printed, res));
             }
             tot_printed += printed;
+            if printed < cards_pp {
+                return Ok((tot_printed, res));
+            }
             res.push(fname);
         }
         Ok((tot_printed, res))
