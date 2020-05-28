@@ -91,7 +91,7 @@ where
         self.t_sofar += 1;
         self.sofar += 1;
         match self.curr.as_ref() {
-            Some(rv) => Some((rv.clone(), self.sofar - 1, self.t_sofar)),
+            Some(rv) => Some((rv.clone(), self.sofar - 1, self.t_sofar - 1)),
 
             None => None,
         }
