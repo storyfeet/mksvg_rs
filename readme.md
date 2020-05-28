@@ -10,6 +10,7 @@ Changes:
 
 ### 0.3.0 
 Now uses anyhow and thiserror instead of failure and failure\_derive
+Now passes through error type which has now been attached to the SvgWrite Trait
 
 ### 0.2.1
 
