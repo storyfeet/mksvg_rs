@@ -13,7 +13,7 @@
 pub mod args;
 pub mod err;
 pub mod iter;
-pub mod macros;
+//pub mod macros;
 pub mod page;
 pub mod path;
 pub mod tag;

@@ -42,9 +42,10 @@ impl<W: IOWrite> SvgIO<W> {
 }
 
 impl<W: IOWrite> SvgWrite for SvgIO<W> {
-    fn write(&mut self, s: &str) {
+    type Err = std::io::Error;
+    fn write(&mut self, s: &str) -> Result<(), Self::Err> {
         let ps = self.pad();
-        write!(self.w, "{}{}\n", ps, s).unwrap();
+        write!(self.w, "{}{}\n", ps, s)
     }
     fn inc_depth(&mut self, n: i8) {
         self.d += n;
@@ -72,17 +73,19 @@ impl<W: FmtWrite> SvgFmt<W> {
 }
 
 impl<W: FmtWrite> SvgWrite for SvgFmt<W> {
-    fn write(&mut self, s: &str) {
+    type Err = std::fmt::Error;
+    fn write(&mut self, s: &str) -> Result<(), Self::Err> {
         let ps = self.pad();
-        write!(self.w, "{}{}\n", ps, s).unwrap();
+        write!(self.w, "{}{}\n", ps, s)
     }
     fn inc_depth(&mut self, n: i8) {
         self.d += n;
     }
 }
 
-impl SvgWrite for &mut dyn SvgWrite {
-    fn write(&mut self, s: &str) {
+impl<E> SvgWrite for &mut dyn SvgWrite<Err = E> {
+    type Err = E;
+    fn write(&mut self, s: &str) -> Result<(), E> {
         (*self).write(s)
     }
     fn inc_depth(&mut self, n: i8) {
@@ -93,19 +96,20 @@ impl SvgWrite for &mut dyn SvgWrite {
 /// the methods on SvgWrite, do not build any structure
 /// they simply write the output, so if you open something (g or svg) don't forget to close it.
 pub trait SvgWrite {
-    fn write(&mut self, s: &str);
+    type Err;
+    fn write(&mut self, s: &str) -> Result<(), Self::Err>;
     fn inc_depth(&mut self, n: i8);
 }
 
-pub struct TransWrap<'a> {
+pub struct TransWrap<'a, E> {
     start: Option<String>,
     td_inc: i8,
     end: String,
-    w: &'a mut dyn SvgWrite,
+    w: &'a mut dyn SvgWrite<Err = E>,
 }
 
-impl<'a> TransWrap<'a> {
-    pub fn new(w: &'a mut dyn SvgWrite, begin: &str, end: &str) -> Self {
+impl<'a, E> TransWrap<'a, E> {
+    pub fn new(w: &'a mut dyn SvgWrite<Err = E>, begin: &str, end: &str) -> Self {
         TransWrap {
             start: Some(begin.to_string()),
             td_inc: 1,
@@ -114,19 +118,21 @@ impl<'a> TransWrap<'a> {
         }
     }
 
-    pub fn force(&mut self) {
+    pub fn force(&mut self) -> Result<(), E> {
         if let Some(ref st) = self.start {
-            self.w.write(&st);
+            self.w.write(&st)?;
             self.w.inc_depth(1);
             self.start = None;
         }
+        Ok(())
     }
 }
 
-impl<'a> SvgWrite for TransWrap<'a> {
-    fn write(&mut self, s: &str) {
-        self.force();
-        self.w.write(s);
+impl<'a, E> SvgWrite for TransWrap<'a, E> {
+    type Err = E;
+    fn write(&mut self, s: &str) -> Result<(), E> {
+        self.force()?;
+        self.w.write(s)
     }
     fn inc_depth(&mut self, n: i8) {
         self.td_inc += n;
@@ -134,11 +140,11 @@ impl<'a> SvgWrite for TransWrap<'a> {
     }
 }
 
-impl<'a> Drop for TransWrap<'a> {
+impl<'a, E> Drop for TransWrap<'a, E> {
     fn drop(&mut self) {
         if self.start == None {
             self.w.inc_depth(-self.td_inc);
-            self.w.write(&self.end);
+            self.w.write(&self.end).ok();
         }
     }
 }

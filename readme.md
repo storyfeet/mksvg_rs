@@ -8,6 +8,9 @@ An Svg Printer for Rust
 Changes:
 --------
 
+### 0.3.0 
+Now uses anyhow and thiserror instead of failure and failure\_derive
+
 ### 0.2.1
 
 Major change, all tags now need to be added using the Tag::tagname feature. This means that SvgWrite is no longer reliant on Generics and can be a Dynamic type.

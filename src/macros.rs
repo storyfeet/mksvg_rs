@@ -45,18 +45,18 @@ macro_rules! svg_w {
         }
     };
 
-    ($wr:ident,(|$n:ident|  $e:tt))=> {
-        let f = |$n:&mut dyn SvgWrite|$e;
+ /*   ($wr:ident,(|$n:ident|  $e:tt))=> {
+        let f = <E>|$n:&mut dyn SvgWrite<Err=<E>>|$e;
         f($wr);
-    };
+    };*/
     ($wr:ident,[$l:expr , $x:expr,$y:expr,$lh:expr ,$($k:ident=$v:tt)*])=>{
         svg_properties!( Text::lines($l,$x,$y,$lh) , $(($k,$v),)*).write($wr);
     };
-    ($wr:ident,$($ch:tt)+)=>{
+    /*($wr:ident,$($ch:tt)+)=>{
         $(
             svg_w!($wr,$ch);
         )+
-    };
+    };*/
 
 }
 

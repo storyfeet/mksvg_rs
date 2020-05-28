@@ -12,9 +12,13 @@ pub struct Tag {
 impl Tag {
     /// Use this function to wrap the first svg tag, as it also writes the namespace to the top of
     /// the doc
-    pub fn start<'a, W: SvgWrite, T: Display>(wr: &'a mut W, w: T, h: T) -> TransWrap<'a> {
-        wr.write(r#"<?xml version="1.0" ?>"#);
-        Tag::svg(w, h).wrap(wr)
+    pub fn start<'a, W: SvgWrite<Err = E>, T: Display, E>(
+        wr: &'a mut W,
+        w: T,
+        h: T,
+    ) -> Result<TransWrap<'a, E>, E> {
+        wr.write(r#"<?xml version="1.0" ?>"#)?;
+        Ok(Tag::svg(w, h).wrap(wr))
     }
 
     fn svg<T: Display>(w: T, h: T) -> Self {
@@ -59,11 +63,11 @@ impl Tag {
         Tag::new("clipPath")
     }
 
-    pub fn write<W: SvgWrite>(&self, w: &mut W) {
-        w.write(&self.to_string());
+    pub fn write<W: SvgWrite<Err = E>, E>(&self, w: &mut W) -> Result<(), E> {
+        w.write(&self.to_string())
     }
 
-    pub fn wrap<'a, W: SvgWrite>(&self, w: &'a mut W) -> TransWrap<'a> {
+    pub fn wrap<'a, W: SvgWrite<Err = E>, E>(&self, w: &'a mut W) -> TransWrap<'a, E> {
         TransWrap::new(
             w,
             &format!("<{} {}>", self.name, self.args),

@@ -11,5 +11,7 @@ readme = "readme.md"
 [dependencies]
 
 num = "0.1"
-failure = "0.1.7"
-failure_derive = "0.1.7"
+#failure = "0.1.7"
+#failure_derive = "0.1.7"
+anyhow = "1.0.31"
+thiserror="1.0.19"
