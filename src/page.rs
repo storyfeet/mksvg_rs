@@ -277,12 +277,12 @@ mod page_test {
         let mut s = String::new();
         let mut svg = SvgFmt::new(&mut s);
         let v = vec![NumCard(4050)];
-        let p = Pages::build()
+        Pages::build()
             .write_page_with_init(
                 &mut svg,
                 &mut v.into_iter(),
                 draw_card,
-                |ref mut w, pw, ph| Tag::rect(0, 0, 5, 5).write(w),
+                |ref mut w, _pw, _ph| Tag::rect(0, 0, 5, 5).write(w),
             )
             .unwrap();
 

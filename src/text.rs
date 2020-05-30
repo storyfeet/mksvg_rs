@@ -65,7 +65,7 @@ impl<C: CDNum> Text<C> {
         self
     }
 
-    pub fn write<S: SvgWrite>(&self, s: &mut S) {
+    pub fn write<E, S: SvgWrite<Err = E>>(&self, s: &mut S) -> Result<(), E> {
         for (n, l) in self.ss.iter().enumerate() {
             let mut a = self.args.clone();
             if !self.font_size_set {
@@ -74,10 +74,11 @@ impl<C: CDNum> Text<C> {
             a = a.xy(self.x, self.y + self.line_height * qcast(n));
             if let Some((w, ref col)) = self.back {
                 let a2 = a.clone().stroke_width(w).stroke(col);
-                s.write(&format!("<text {}>{}</text>", a2, l));
+                s.write(&format!("<text {}>{}</text>", a2, l))?;
             }
-            s.write(&format!("<text {}>{}</text>", a, l));
+            s.write(&format!("<text {}>{}</text>", a, l))?;
         }
+        Ok(())
     }
 }
 

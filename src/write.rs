@@ -157,7 +157,7 @@ mod test {
         let mut buf = String::new();
         let mut g = SvgFmt::new(&mut buf);
         let mut p = TransWrap::new(&mut g, "<hello>", "<goodbye>");
-        p.write("<item>");
+        p.write("<item>").unwrap();
 
         drop(p);
         assert_eq!(&buf, "<hello>\n  <item>\n<goodbye>\n");
@@ -178,7 +178,7 @@ mod test {
         let mut buf = String::new();
         let mut g = SvgFmt::new(&mut buf);
         let mut p = TransWrap::new(&mut g, "<hello>", "<goodbye>");
-        p.force();
+        p.force().unwrap();
         drop(p);
         assert_eq!(&buf, "<hello>\n<goodbye>\n");
     }
